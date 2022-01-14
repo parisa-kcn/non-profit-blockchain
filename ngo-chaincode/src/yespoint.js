@@ -222,7 +222,7 @@ let Chaincode = class {
     // Check if the donor already exists
     let donorQuery = await stub.getState(key);
     if (donorQuery.toString()) {
-      throw new Error('##### createDonor - This donor already exists: ' + json['donorUserName']);
+      throw new Error('##### createDonor - This donor already exists: ' + json['customerId']);
     }
 
     await stub.putState(key, Buffer.from(JSON.stringify(json)));
@@ -346,11 +346,11 @@ let Chaincode = class {
    * @param {*} stub 
    * @param {*} args - JSON as follows:
    * {
-   *    "donationId":"2211",
-   *    "donationAmount":100,
-   *    "donationDate":"2018-09-20T12:41:59.582Z",
-   *    "donorUserName":"edge",
-   *    "ngoRegistrationNumber":"6322"
+   *    "pointId":1122,
+   *    "orgId":100,
+   *    "points": 20
+   *    "customerId":"123",
+   *    "transactionDate" "2018-09-20T12:41:59.582Z"
    * }
    */
   async createPoints(stub, args) {
