@@ -133,6 +133,18 @@ async function queryByString(stub, queryString) {
 }
 
 
+/**
+ * Create a chaincode event
+ */
+function createEvent(stub, data = {}) {
+  const eventObject = {
+      createdAt: (new Date()).getTime(),
+      createdBy: data.donor,
+      donationAmount: data.amount,
+      ngoRegistrationNumber: data.ngo
+  }
+  stub.setEvent(data.eventName, Buffer.from(JSON.stringify(eventObject)));
+}
 
 /************************************************************************************************
  * 
@@ -191,268 +203,80 @@ let Chaincode = class {
 
 
 
-  /************************************************************************************************
-   *
-   * Customer functions
-   *
-   ************************************************************************************************/
 
-  /**
-   * Creates a new donor
-   *
-   * @param {*} stub
-   * @param {*} args - JSON as follows:
-   * {
-   *    "customerId":"edge",
-   *    "email":"edge@abc.com",
-   *    "msnList":["0450998899"]
-   * }
-   */
-  async createCustomer(stub, args) {
-    console.log('============= START : createDonor ===========');
-    console.log('##### create customer arguments: ' + JSON.stringify(args));
 
-    // args is passed as a JSON string
-    let json = JSON.parse(args);
-    let key = 'customerId' + json['customerId'];
-    json['docType'] = 'customer';
 
-    console.log('##### createCustomer payload: ' + JSON.stringify(json));
 
-    // Check if the donor already exists
-    let donorQuery = await stub.getState(key);
-    if (donorQuery.toString()) {
-      throw new Error('##### createDonor - This donor already exists: ' + json['customerId']);
-    }
-
-    await stub.putState(key, Buffer.from(JSON.stringify(json)));
-    console.log('============= END : createDonor ===========');
-  }
 
 
   /**
-   * Retrieves a specfic donor
+   * Retrieves all spendAllocations
    * 
    * @param {*} stub 
    * @param {*} args 
    */
-  async queryCustomer(stub, args) {
-    console.log('============= START : queryCustomer ===========');
-    console.log('##### queryDonor arguments: ' + JSON.stringify(args));
-
-    // args is passed as a JSON string
-    let json = JSON.parse(args);
-    let key = 'donor' + json['customerId'];
-    console.log('##### queryCustomer key: ' + key);
-
-    return queryByKey(stub, key);
-  }
-
-  /**
-   * Retrieves all donors
-   * 
-   * @param {*} stub 
-   * @param {*} args 
-   */
-  async queryAllCustomers(stub, args) {
-    console.log('============= START : queryAllCustomers ===========');
-    console.log('##### queryAllCustomers arguments: ' + JSON.stringify(args));
- 
-    let queryString = '{"selector": {"docType": "customer"}}';
+  async queryAllSpendAllocations(stub, args) {
+    console.log('============= START : queryAllSpendAllocations ===========');
+    console.log('##### queryAllSpendAllocations arguments: ' + JSON.stringify(args)); 
+    let queryString = '{"selector": {"docType": "spendAllocation"}}';
     return queryByString(stub, queryString);
   }
 
   /************************************************************************************************
    * 
-   * NGO functions 
+   * Ratings functions 
    * 
    ************************************************************************************************/
 
   /**
-   * Creates a new NGO
+   * Creates a new Rating
    * 
    * @param {*} stub 
    * @param {*} args - JSON as follows:
    * {
-   *    "partnerId":"6322",
-   *    "partnerNo": "1234"
-   *    "partnerName":"Optus Ltd",
-   *    "description":"Optus telecome ...",
-   *    "address":"1 Lyon park rd"
-   *
+   *    "ngoRegistrationNumber":"6322",
+   *    "donorUserName":"edge",
+   *    "rating":1,
    * }
    */
-  async createPartner(stub, args) {
-    console.log('============= START : createPartner ===========');
-    console.log('##### createPartner arguments: ' + JSON.stringify(args));
+  async createRating(stub, args) {
+    console.log('============= START : createRating ===========');
+    console.log('##### createRating arguments: ' + JSON.stringify(args));
 
     // args is passed as a JSON string
     let json = JSON.parse(args);
-    let key = 'ngo' + json['partnerId'];
-    json['docType'] = 'partner';
+    let key = 'rating' + json['ngoRegistrationNumber'] + json['donorUserName'];
+    json['docType'] = 'rating';
 
-    console.log('##### createPartner payload: ' + JSON.stringify(json));
+    console.log('##### createRating payload: ' + JSON.stringify(json));
 
-    // Check if the NGO already exists
-    let partnerQuery = await stub.getState(key);
-    if (partnerQuery.toString()) {
-      throw new Error('##### createPartner - This NGO already exists: ' + json['partnerid']);
+    // Check if the Rating already exists
+    let ratingQuery = await stub.getState(key);
+    if (ratingQuery.toString()) {
+      throw new Error('##### createRating - Rating by donor: ' +  json['donorUserName'] + ' for NGO: ' + json['ngoRegistrationNumber'] + ' already exists');
     }
 
     await stub.putState(key, Buffer.from(JSON.stringify(json)));
-    console.log('============= END : createPartner ===========');
+    console.log('============= END : createRating ===========');
   }
-
-  /**
-   * Retrieves a specfic ngo
-   * 
-   * @param {*} stub 
-   * @param {*} args 
-   */
-  async queryPartner(stub, args) {
-    console.log('============= START : queryPartner ===========');
-    console.log('##### queryORG arguments: ' + JSON.stringify(args));
-
-    // args is passed as a JSON string
-    let json = JSON.parse(args);
-    let key = 'org' + json['partnerId'];
-    console.log('##### queryOrg key: ' + key);
-
-    return queryByKey(stub, key);
-  }
-
-  /**
-   * Retrieves all ngos
-   * 
-   * @param {*} stub 
-   * @param {*} args 
-   */
-  async queryAllPartners(stub, args) {
-    console.log('============= START : queryAllOPartners ===========');
-    console.log('##### queryAllPartners arguments: ' + JSON.stringify(args));
- 
-    let queryString = '{"selector": {"docType": "partner"}}';
-    return queryByString(stub, queryString);
-  }
-
-  /************************************************************************************************
-   * 
-   * Donation functions 
-   * 
-   ************************************************************************************************/
-
-  /**
-   * Creates a new Donation
-   * 
-   * @param {*} stub 
-   * @param {*} args - JSON as follows:
-   * {
-   *    "pointId":1122,
-   *    "orgId":100,
-   *    "points": 20
-   *    "customerId":"123",
-   *    "transactionDate" "2018-09-20T12:41:59.582Z"
-   * }
-   */
-  async createPoints(stub, args) {
-    console.log('============= START : createPoints ===========');
-    console.log('##### createPoints arguments: ' + JSON.stringify(args));
-
-    // args is passed as a JSON string
-    let json = JSON.parse(args);
-    let key = 'point' + json['pointId'];
-    json['docType'] = 'points';
-
-    console.log('##### createPoints point: ' + JSON.stringify(json));
-
-    // Confirm the NGO exists
-    let orgKey = 'org' + json['orgId'];
-    let orgQuery = await stub.getState(orgKey);
-    if (!orgQuery.toString()) {
-      throw new Error('##### createPoints - Cannot create points as the Org does not exist: ' + json['orgId']);
-    }
-
-    // Confirm the donor exists
-    let customerKey = 'customer' + json['customerId'];
-    let customerQuery = await stub.getState(customerKey);
-    if (!customerQuery.toString()) {
-      throw new Error('##### createPoints - Cannot create points as the Customer does not exist: ' + json['customerId']);
-    }
-
-    // Check if the Donation already exists
-    let pointsQuery = await stub.getState(key);
-    if (pointsQuery.toString()) {
-      throw new Error('##### createDonation - This Donation already exists: ' + json['pointId']);
-    }
-
-    await stub.putState(key, Buffer.from(JSON.stringify(json)));
-    console.log('============= END : createPoints ===========');
-  }
-
-  /**
-   * Retrieves a specfic donation
-   * 
-   * @param {*} stub 
-   * @param {*} args 
-   */
-  async queryPoints(stub, args) {
-    console.log('============= START : queryPoints ===========');
-    console.log('##### queryPoints arguments: ' + JSON.stringify(args));
-
-    // args is passed as a JSON string
-    let json = JSON.parse(args);
-    let key = 'point' + json['pointId'];
-    console.log('##### queryPoints key: ' + key);
-    return queryByKey(stub, key);
-  }
-
-  /**
-   * Retrieves donations for a specfic donor
-   * 
-   * @param {*} stub 
-   * @param {*} args 
-   */
-  async queryPointsForCustomer(stub, args) {
-    console.log('============= START : queryPointsForCustomer ===========');
-    console.log('##### queryPointsForCustomer arguments: ' + JSON.stringify(args));
-
-    // args is passed as a JSON string
-    let json = JSON.parse(args);
-    let queryString = '{"selector": {"docType": "points", "pointsCustomerId": "' + json['customerId'] + '"}}';
-    return queryByString(stub, queryString);
-  }
-
-  /**
-   * Retrieves all donations
-   * 
-   * @param {*} stub 
-   * @param {*} args 
-   */
-  async queryAllPoints(stub, args) {
-    console.log('============= START : queryAllPoints ===========');
-    console.log('##### queryAllPoints arguments: ' + JSON.stringify(args));
-    let queryString = '{"selector": {"docType": "points"}}';
-    return queryByString(stub, queryString);
-  }
-
 
 
 
   /************************************************************************************************
-   *
-   * Blockchain related functions
-   *
+   * 
+   * Blockchain related functions 
+   * 
    ************************************************************************************************/
 
   /**
    * Retrieves the Fabric block and transaction details for a key or an array of keys
-   *
-   * @param {*} stub
+   * 
+   * @param {*} stub 
    * @param {*} args - JSON as follows:
    * [
    *    {"key": "a207aa1e124cc7cb350e9261018a9bd05fb4e0f7dcac5839bdcd0266af7e531d-1"}
    * ]
-   *
+   * 
    */
   async queryHistoryForKey(stub, args) {
     console.log('============= START : queryHistoryForKey ===========');
